@@ -8,6 +8,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  List<Map<String, String>> products = [
+    {'title': 'Derby Leather Shoes', 'description': "Men's shoe"},
+    // Add more products as needed
+  ];
+
   final TextEditingController searchController = TextEditingController();
   bool showSearchBar = false;
 
@@ -145,12 +150,28 @@ class _HomePageState extends State<HomePage> {
               if (!showSearchBar) const SizedBox(height: 12),
               Expanded(
                 child: ListView.separated(
-                  itemCount: 3,
+                  itemCount: products.length,
                   separatorBuilder: (context, index) =>
                       const SizedBox(height: 16),
                   itemBuilder: (context, index) {
+                    final product = products[index];
                     return GestureDetector(
-                      onTap: () => Navigator.pushNamed(context, '/details'),
+                      onTap: () async {
+                        final result = await Navigator.pushNamed(
+                          context,
+                          '/details',
+                          arguments: {'product': product, 'index': index},
+                        );
+                        if (result == 'deleted') {
+                          setState(() {
+                            products.removeAt(index);
+                          });
+                        } else if (result is Map<String, String>) {
+                          setState(() {
+                            products[index] = result;
+                          });
+                        }
+                      },
                       child: Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -179,17 +200,17 @@ class _HomePageState extends State<HomePage> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        const Text(
-                                          'Derby Leather Shoes',
-                                          style: TextStyle(
+                                        Text(
+                                          product['title'] ?? '',
+                                          style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
-                                        const Text(
-                                          "Men's shoe",
-                                          style: TextStyle(
+                                        Text(
+                                          product['description'] ?? '',
+                                          style: const TextStyle(
                                             fontSize: 13,
                                             color: Colors.grey,
                                           ),
@@ -242,7 +263,14 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, '/add_update_search'),
+        onPressed: () async {
+          final newProduct = await Navigator.pushNamed(context, '/add_edit');
+          if (newProduct is Map<String, String>) {
+            setState(() {
+              products.add(newProduct);
+            });
+          }
+        },
         backgroundColor: const Color(0xFF3B5AFB),
         child: const Icon(Icons.add, size: 32),
       ),

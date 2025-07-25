@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class DetailsPage extends StatelessWidget {
-  const DetailsPage({super.key});
+  final Map<String, String>? product;
+  const DetailsPage({super.key, this.product});
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +151,9 @@ class DetailsPage extends StatelessWidget {
                         children: [
                           Expanded(
                             child: OutlinedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.pop(context, 'deleted');
+                              },
                               style: OutlinedButton.styleFrom(
                                 side: const BorderSide(
                                   color: Color(0xFFFF3B30),
@@ -172,7 +175,17 @@ class DetailsPage extends StatelessWidget {
                           const SizedBox(width: 16),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () async {
+                                final updatedProduct =
+                                    await Navigator.pushNamed(
+                                      context,
+                                      '/add_edit',
+                                      arguments: {'product': product},
+                                    );
+                                if (updatedProduct is Map<String, String>) {
+                                  Navigator.pop(context, updatedProduct);
+                                }
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:
                                     Colors.blue, // or your preferred color

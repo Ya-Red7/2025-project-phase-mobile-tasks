@@ -19,10 +19,37 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFFF5F5F7),
       ),
       initialRoute: '/',
-      routes: {
-        '/': (context) => const HomePage(),
-        '/details': (context) => const DetailsPage(),
-        '/add_update_search': (context) => const AddUpdateSearchPage(),
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/':
+            return MaterialPageRoute(builder: (_) => const HomePage());
+          case '/details':
+            final args = settings.arguments as Map<String, dynamic>?;
+            return PageRouteBuilder(
+              pageBuilder: (_, __, ___) =>
+                  DetailsPage(product: args?['product']),
+              transitionsBuilder: (_, animation, __, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+            );
+          case '/add_edit':
+            final args = settings.arguments as Map<String, dynamic>?;
+            return PageRouteBuilder(
+              pageBuilder: (_, __, ___) =>
+                  AddUpdateSearchPage(product: args?['product']),
+              transitionsBuilder: (_, animation, __, child) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                );
+              },
+            );
+          default:
+            return null;
+        }
       },
     );
   }

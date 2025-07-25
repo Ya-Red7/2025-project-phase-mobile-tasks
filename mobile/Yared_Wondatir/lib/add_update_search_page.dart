@@ -1,7 +1,27 @@
 import 'package:flutter/material.dart';
 
-class AddUpdateSearchPage extends StatelessWidget {
-  const AddUpdateSearchPage({super.key});
+class AddUpdateSearchPage extends StatefulWidget {
+  final Map<String, String>? product;
+  const AddUpdateSearchPage({super.key, this.product});
+
+  @override
+  State<AddUpdateSearchPage> createState() => _AddUpdateSearchPageState();
+}
+
+class _AddUpdateSearchPageState extends State<AddUpdateSearchPage> {
+  late TextEditingController titleController;
+  late TextEditingController descController;
+
+  @override
+  void initState() {
+    super.initState();
+    titleController = TextEditingController(
+      text: widget.product?['title'] ?? '',
+    );
+    descController = TextEditingController(
+      text: widget.product?['description'] ?? '',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,7 +30,10 @@ class AddUpdateSearchPage extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -24,7 +47,10 @@ class AddUpdateSearchPage extends StatelessWidget {
                     const SizedBox(width: 8),
                     const Text(
                       'Add  Product',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
                   ],
                 ),
@@ -42,30 +68,37 @@ class AddUpdateSearchPage extends StatelessWidget {
                     children: const [
                       Icon(Icons.image, size: 40, color: Colors.grey),
                       SizedBox(height: 8),
-                      Text('upload image', style: TextStyle(color: Colors.grey)),
+                      Text(
+                        'upload image',
+                        style: TextStyle(color: Colors.grey),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
                 // Form fields
-                _buildTextField('name'),
+                _buildTextField('Title', controller: titleController),
                 const SizedBox(height: 12),
-                _buildTextField('category'),
-                const SizedBox(height: 12),
-                _buildTextField('price', isPrice: true),
-                const SizedBox(height: 12),
-                _buildTextField('description', maxLines: 3),
+                _buildTextField('Description', controller: descController),
                 const SizedBox(height: 20),
                 Row(
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(context, {
+                            'title': titleController.text,
+                            'description': descController.text,
+                          });
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF3B5AFB),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: const Text('ADD', style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text(
+                          widget.product == null ? 'ADD' : 'UPDATE',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                   ],
@@ -77,10 +110,19 @@ class AddUpdateSearchPage extends StatelessWidget {
                       child: OutlinedButton(
                         onPressed: () {},
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFFF3B30), width: 2),
+                          side: const BorderSide(
+                            color: Color(0xFFFF3B30),
+                            width: 2,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: const Text('DELETE', style: TextStyle(color: Color(0xFFFF3B30), fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'DELETE',
+                          style: TextStyle(
+                            color: Color(0xFFFF3B30),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -96,7 +138,10 @@ class AddUpdateSearchPage extends StatelessWidget {
                     const SizedBox(width: 8),
                     const Text(
                       'Search  Product',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
                   ],
                 ),
@@ -109,7 +154,10 @@ class AddUpdateSearchPage extends StatelessWidget {
                           hintText: 'Leather',
                           filled: true,
                           fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 0,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
@@ -124,7 +172,10 @@ class AddUpdateSearchPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                        icon: const Icon(
+                          Icons.arrow_forward,
+                          color: Colors.white,
+                        ),
                         onPressed: () {},
                       ),
                     ),
@@ -136,7 +187,10 @@ class AddUpdateSearchPage extends StatelessWidget {
                         border: Border.all(color: Colors.grey[300]!),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.filter_alt_outlined, color: Color(0xFF3B5AFB)),
+                        icon: const Icon(
+                          Icons.filter_alt_outlined,
+                          color: Color(0xFF3B5AFB),
+                        ),
                         onPressed: () {},
                       ),
                     ),
@@ -148,7 +202,8 @@ class AddUpdateSearchPage extends StatelessWidget {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: 2,
-                  separatorBuilder: (context, index) => const SizedBox(height: 16),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 16),
                   itemBuilder: (context, index) {
                     return Container(
                       decoration: BoxDecoration(
@@ -176,19 +231,35 @@ class AddUpdateSearchPage extends StatelessWidget {
                               children: [
                                 const Text(
                                   'Derby Leather Shoes',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 const Text(
                                   "Men's shoe",
-                                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey,
+                                  ),
                                 ),
                                 const SizedBox(height: 8),
                                 Row(
                                   children: const [
-                                    Icon(Icons.star, color: Color(0xFFFFC107), size: 16),
+                                    Icon(
+                                      Icons.star,
+                                      color: Color(0xFFFFC107),
+                                      size: 16,
+                                    ),
                                     SizedBox(width: 4),
-                                    Text('4.0', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                                    Text(
+                                      '4.0',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],
@@ -200,7 +271,10 @@ class AddUpdateSearchPage extends StatelessWidget {
                               SizedBox(height: 8),
                               Text(
                                 ' 120',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
                               ),
                               SizedBox(height: 40),
                             ],
@@ -213,13 +287,19 @@ class AddUpdateSearchPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 // Filter section
-                const Text('Category', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Text(
+                  'Category',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
                 const SizedBox(height: 8),
                 TextField(
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 0,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -227,7 +307,10 @@ class AddUpdateSearchPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Price', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Text(
+                  'Price',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
                 const SizedBox(height: 8),
                 Slider(
                   value: 120,
@@ -246,7 +329,10 @@ class AddUpdateSearchPage extends StatelessWidget {
                       backgroundColor: const Color(0xFF3B5AFB),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text('APPLY', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'APPLY',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -259,8 +345,14 @@ class AddUpdateSearchPage extends StatelessWidget {
   }
 }
 
-Widget _buildTextField(String label, {bool isPrice = false, int maxLines = 1}) {
+Widget _buildTextField(
+  String label, {
+  TextEditingController? controller,
+  bool isPrice = false,
+  int maxLines = 1,
+}) {
   return TextField(
+    controller: controller,
     maxLines: maxLines,
     decoration: InputDecoration(
       labelText: label,
@@ -274,4 +366,4 @@ Widget _buildTextField(String label, {bool isPrice = false, int maxLines = 1}) {
       ),
     ),
   );
-} 
+}
