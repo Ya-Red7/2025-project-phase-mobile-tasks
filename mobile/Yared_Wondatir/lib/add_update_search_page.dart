@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'core/entities/product.dart';
+import 'di/dependency_injection.dart';
+import 'domain/usecases/create_product_usecase.dart';
+import 'domain/usecases/update_product_usecase.dart';
+import 'domain/usecases/base_usecase.dart';
 
 class AddUpdateSearchPage extends StatefulWidget {
-  final Map<String, String>? product;
+  final Product? product;
   const AddUpdateSearchPage({super.key, this.product});
 
   @override
@@ -9,17 +14,32 @@ class AddUpdateSearchPage extends StatefulWidget {
 }
 
 class _AddUpdateSearchPageState extends State<AddUpdateSearchPage> {
-  late TextEditingController titleController;
+  late TextEditingController nameController;
   late TextEditingController descController;
+  late TextEditingController priceController;
+  late TextEditingController imageUrlController;
+  
+  late final CreateProductUseCase _createProductUseCase;
+  late final UpdateProductUseCase _updateProductUseCase;
 
   @override
   void initState() {
     super.initState();
-    titleController = TextEditingController(
-      text: widget.product?['title'] ?? '',
+    final di = DependencyInjection();
+    _createProductUseCase = di.createProductUseCase;
+    _updateProductUseCase = di.updateProductUseCase;
+    
+    nameController = TextEditingController(
+      text: widget.product?.name ?? '',
     );
     descController = TextEditingController(
-      text: widget.product?['description'] ?? '',
+      text: widget.product?.description ?? '',
+    );
+    priceController = TextEditingController(
+      text: widget.product?.price.toString() ?? '',
+    );
+    imageUrlController = TextEditingController(
+      text: widget.product?.imageUrl ?? 'assets/01.png',
     );
   }
 
@@ -45,9 +65,9 @@ class _AddUpdateSearchPageState extends State<AddUpdateSearchPage> {
                       onPressed: () => Navigator.pop(context),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
-                      'Add  Product',
-                      style: TextStyle(
+                    Text(
+                      widget.product == null ? 'Add Product' : 'Update Product',
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
@@ -77,19 +97,43 @@ class _AddUpdateSearchPageState extends State<AddUpdateSearchPage> {
                 ),
                 const SizedBox(height: 20),
                 // Form fields
-                _buildTextField('Title', controller: titleController),
+                _buildTextField('Name', controller: nameController),
                 const SizedBox(height: 12),
                 _buildTextField('Description', controller: descController),
+                const SizedBox(height: 12),
+                _buildTextField('Price', controller: priceController, keyboardType: TextInputType.number),
+                const SizedBox(height: 12),
+                _buildTextField('Image URL', controller: imageUrlController),
                 const SizedBox(height: 20),
                 Row(
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context, {
-                            'title': titleController.text,
-                            'description': descController.text,
-                          });
+                        onPressed: () async {
+                          try {
+                            final price = double.tryParse(priceController.text) ?? 0.0;
+                            final product = Product(
+                              id: widget.product?.id ?? '',
+                              name: nameController.text,
+                              description: descController.text,
+                              imageUrl: imageUrlController.text,
+                              price: price,
+                            );
+                            
+                            if (widget.product == null) {
+                              // Create new product
+                              final newProduct = await _createProductUseCase(CreateProductParams(product));
+                              Navigator.pop(context, newProduct);
+                            } else {
+                              // Update existing product
+                              final updatedProduct = await _updateProductUseCase(UpdateProductParams(product));
+                              Navigator.pop(context, updatedProduct);
+                            }
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: $e')),
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF3B5AFB),
@@ -350,10 +394,12 @@ Widget _buildTextField(
   TextEditingController? controller,
   bool isPrice = false,
   int maxLines = 1,
+  TextInputType? keyboardType,
 }) {
   return TextField(
     controller: controller,
     maxLines: maxLines,
+    keyboardType: keyboardType,
     decoration: InputDecoration(
       labelText: label,
       prefixIcon: isPrice ? const Icon(Icons.attach_money) : null,

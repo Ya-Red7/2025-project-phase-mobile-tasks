@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'core/entities/product.dart';
+import 'di/dependency_injection.dart';
+import 'domain/usecases/view_product_usecase.dart';
+import 'domain/usecases/delete_product_usecase.dart';
+import 'domain/usecases/base_usecase.dart';
 
 class DetailsPage extends StatelessWidget {
-  final Map<String, String>? product;
+  final Product? product;
   const DetailsPage({super.key, this.product});
 
   @override
@@ -30,7 +35,7 @@ class DetailsPage extends StatelessWidget {
                         topRight: Radius.circular(16),
                       ),
                       child: Image.asset(
-                        'lib/assets/photo.jpg',
+                        product?.imageUrl ?? 'lib/assets/photo.jpg',
                         width: double.infinity,
                         height: 180,
                         fit: BoxFit.cover,
@@ -59,9 +64,9 @@ class DetailsPage extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Text(
-                            "Men's shoe",
-                            style: TextStyle(fontSize: 14, color: Colors.grey),
+                          Text(
+                            product?.description ?? "Men's shoe",
+                            style: const TextStyle(fontSize: 14, color: Colors.grey),
                           ),
                           const Spacer(),
                           const Icon(
@@ -78,18 +83,18 @@ class DetailsPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Row(
-                        children: const [
+                        children: [
                           Text(
-                            'Derby Leather',
-                            style: TextStyle(
+                            product?.name ?? 'Derby Leather',
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 22,
                             ),
                           ),
-                          Spacer(),
+                          const Spacer(),
                           Text(
-                            ' 120',
-                            style: TextStyle(
+                            '\$${product?.price.toStringAsFixed(2) ?? '120'}',
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 20,
                             ),
@@ -142,17 +147,24 @@ class DetailsPage extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        'A derby leather shoe is a classic and versatile footwear option characterized by its open lacing system, where the shoelace eyelets are sewn on top of the vamp (the upper part of the shoe). This design feature provides a more relaxed and casual look compared to the closed lacing system of oxford shoes. Derby shoes are typically made of high-quality leather, known for its durability and elegance, making them suitable for both formal and casual occasions. With their timeless style and comfortable fit, derby leather shoes are a staple in any well-rounded wardrobe.',
-                        style: TextStyle(fontSize: 14, color: Colors.black87),
+                      Text(
+                        product?.description ?? 'A derby leather shoe is a classic and versatile footwear option characterized by its open lacing system, where the shoelace eyelets are sewn on top of the vamp (the upper part of the shoe). This design feature provides a more relaxed and casual look compared to the closed lacing system of oxford shoes. Derby shoes are typically made of high-quality leather, known for its durability and elegance, making them suitable for both formal and casual occasions. With their timeless style and comfortable fit, derby leather shoes are a staple in any well-rounded wardrobe.',
+                        style: const TextStyle(fontSize: 14, color: Colors.black87),
                       ),
                       const SizedBox(height: 24),
                       Row(
                         children: [
                           Expanded(
                             child: OutlinedButton(
-                              onPressed: () {
-                                Navigator.pop(context, 'deleted');
+                              onPressed: () async {
+                                if (product != null) {
+                                  final di = DependencyInjection();
+                                  final deleteUseCase = di.deleteProductUseCase;
+                                  final success = await deleteUseCase(DeleteProductParams(product!.id));
+                                  if (success) {
+                                    Navigator.pop(context, 'deleted');
+                                  }
+                                }
                               },
                               style: OutlinedButton.styleFrom(
                                 side: const BorderSide(
@@ -182,7 +194,7 @@ class DetailsPage extends StatelessWidget {
                                       '/add_edit',
                                       arguments: {'product': product},
                                     );
-                                if (updatedProduct is Map<String, String>) {
+                                if (updatedProduct is Product) {
                                   Navigator.pop(context, updatedProduct);
                                 }
                               },

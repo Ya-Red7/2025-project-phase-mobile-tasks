@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'core/entities/product.dart';
+import 'di/dependency_injection.dart';
+import 'domain/usecases/view_all_products_usecase.dart';
+import 'domain/usecases/delete_product_usecase.dart';
+import 'domain/usecases/base_usecase.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -8,13 +13,45 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Map<String, String>> products = [
-    {'title': 'Derby Leather Shoes', 'description': "Men's shoe"},
-    // Add more products as needed
-  ];
+  List<Product> products = [];
+  bool isLoading = true;
+  String? errorMessage;
 
   final TextEditingController searchController = TextEditingController();
   bool showSearchBar = false;
+
+  late final ViewAllProductsUseCase _viewAllProductsUseCase;
+  late final DeleteProductUseCase _deleteProductUseCase;
+
+  @override
+  void initState() {
+    super.initState();
+    final di = DependencyInjection();
+    _viewAllProductsUseCase = di.viewAllProductsUseCase;
+    _deleteProductUseCase = di.deleteProductUseCase;
+    _loadProducts();
+  }
+
+  Future<void> _loadProducts() async {
+    try {
+      setState(() {
+        isLoading = true;
+        errorMessage = null;
+      });
+      
+      final productsList = await _viewAllProductsUseCase(const NoParams());
+      
+      setState(() {
+        products = productsList;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to load products: $e';
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -149,114 +186,141 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 24),
               if (!showSearchBar) const SizedBox(height: 12),
               Expanded(
-                child: ListView.separated(
-                  itemCount: products.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    return GestureDetector(
-                      onTap: () async {
-                        final result = await Navigator.pushNamed(
-                          context,
-                          '/details',
-                          arguments: {'product': product, 'index': index},
-                        );
-                        if (result == 'deleted') {
-                          setState(() {
-                            products.removeAt(index);
-                          });
-                        } else if (result is Map<String, String>) {
-                          setState(() {
-                            products[index] = result;
-                          });
-                        }
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(16),
-                                topRight: Radius.circular(16),
-                              ),
-                              child: Image.asset(
-                                'lib/assets/photo.jpg',
-                                height: 120,
-                                fit: BoxFit.cover,
-                              ),
+                child: isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : errorMessage != null
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  errorMessage!,
+                                  style: const TextStyle(color: Colors.red),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: _loadProducts,
+                                  child: const Text('Retry'),
+                                ),
+                              ],
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          product['title'] ?? '',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          product['description'] ?? '',
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: const [
-                                            Icon(
-                                              Icons.star,
-                                              color: Color(0xFFFFC107),
-                                              size: 16,
-                                            ),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              '4.0',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: Colors.grey,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: const [
-                                      Text(
-                                        ' 120',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
+                          )
+                        : products.isEmpty
+                            ? const Center(
+                                child: Text(
+                                  'No products available',
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                              )
+                            : ListView.separated(
+                                itemCount: products.length,
+                                separatorBuilder: (context, index) =>
+                                    const SizedBox(height: 16),
+                                itemBuilder: (context, index) {
+                                  final product = products[index];
+                                  return GestureDetector(
+                                    onTap: () async {
+                                      final result = await Navigator.pushNamed(
+                                        context,
+                                        '/details',
+                                        arguments: {'product': product, 'index': index},
+                                      );
+                                      if (result == 'deleted') {
+                                        setState(() {
+                                          products.removeAt(index);
+                                        });
+                                      } else if (result is Product) {
+                                        setState(() {
+                                          products[index] = result;
+                                        });
+                                      }
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(16),
                                       ),
-                                    ],
-                                  ),
-                                ],
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: const BorderRadius.only(
+                                              topLeft: Radius.circular(16),
+                                              topRight: Radius.circular(16),
+                                            ),
+                                            child: Image.asset(
+                                              product.imageUrl,
+                                              height: 120,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.all(12.0),
+                                            child: Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        product.name,
+                                                        style: const TextStyle(
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 16,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        product.description,
+                                                        style: const TextStyle(
+                                                          fontSize: 13,
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 8),
+                                                      Row(
+                                                        children: const [
+                                                          Icon(
+                                                            Icons.star,
+                                                            color: Color(0xFFFFC107),
+                                                            size: 16,
+                                                          ),
+                                                          SizedBox(width: 4),
+                                                          Text(
+                                                            '4.0',
+                                                            style: TextStyle(
+                                                              fontSize: 13,
+                                                              color: Colors.grey,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                                  children: [
+                                                    Text(
+                                                      '\$${product.price.toStringAsFixed(2)}',
+                                                      style: const TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
               ),
             ],
           ),
@@ -265,7 +329,7 @@ class _HomePageState extends State<HomePage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final newProduct = await Navigator.pushNamed(context, '/add_edit');
-          if (newProduct is Map<String, String>) {
+          if (newProduct is Product) {
             setState(() {
               products.add(newProduct);
             });
